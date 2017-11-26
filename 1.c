@@ -51,12 +51,12 @@ struct actor{
 };
 
 void input_log(movie *, FILE *);
-void string_input(FILE *, char *);
+void string_input(FILE *, char **);
 
 int main(void){
   char ** a;
   int i = 0;
-  movie *m_log = (movie *)malloc(sizeof(int) *  3);
+  movie *m_log = (movie *)malloc(sizeof(movie));
   FILE *movie_file;
   input_log(m_log, movie_file);
 
@@ -86,125 +86,27 @@ void input_log(movie *m_log, FILE *movie_file){
   int size = 0;
 
 //tag입력
-  fscanf(movie_file, "%c", &tmp); //동적 메모리 할당을 위해 tag의 사이즈 알아봄
-  while (tmp != ':'){
-    size++;
-    fscanf(movie_file, "%c", &tmp);
-  }
-
-  fseek(movie_file, -(size + 1), SEEK_CUR); // 파일 위치 지시자를 처음으로 돌림
-
-  m_log -> tag = (char *)malloc(sizeof(char) * size + 1); //size + 1만큼 메모리 할당
-
-  fscanf(movie_file, "%c", &tmp); // trash에 먼저 입력받고 : 전까지만 tag에 입력함
-  for (int i = 0; tmp != ':'; i++){
-    *((m_log -> tag) + i) = tmp;
-    fscanf(movie_file, "%c", &tmp);
-  }
-  size = 0;
+  string_input(movie_file, &(m_log -> tag));
 
 //serial number 입력
-fscanf(movie_file, "%c", &tmp);
-while (tmp != ':'){
-  size++;
-  fscanf(movie_file, "%c", &tmp);
-}
-
-  m_log -> serial_number = (char *)malloc(sizeof(char) * size + 1);
-  fseek(movie_file, -(size + 1), SEEK_CUR);
-
-  fscanf(movie_file, "%c", &tmp);
-  for (int i = 0; tmp != ':'; i++){
-    *((m_log -> serial_number) + i) = tmp;
-    fscanf(movie_file, "%c", &tmp);
-  }
-  size = 0;
+  string_input(movie_file, &(m_log -> serial_number));
 
 //title 입력
-fscanf(movie_file, "%c", &tmp);
-while (tmp != ':'){
-  size++;
-  fscanf(movie_file, "%c", &tmp);
-}
-
-  m_log -> title = (char *)malloc(sizeof(char) * size + 1);
-  fseek(movie_file, -(size + 1), SEEK_CUR);
-
-  fscanf(movie_file, "%c", &tmp);
-  for (int i = 0; tmp != ':'; i++){
-    *((m_log -> title) + i) = tmp;
-    fscanf(movie_file, "%c", &tmp);
-  }
-  size = 0;
+  string_input(movie_file, &(m_log -> title));
 
 //genre 입력
-  //string_input(movie_file, (m_log -> genre));
-  fscanf(movie_file, "%c", &tmp);
-  while (tmp != ':'){
-    size++;
-    fscanf(movie_file, "%c", &tmp);
-  }
-
-    m_log -> genre = (char *)malloc(sizeof(char) * size + 1);
-    fseek(movie_file, -(size + 1), SEEK_CUR);
-
-    fscanf(movie_file, "%c", &tmp);
-    for (int i = 0; tmp != ':'; i++){
-      *((m_log -> genre) + i) = tmp;
-      fscanf(movie_file, "%c", &tmp);
-    }
-    size = 0;
+  string_input(movie_file, &(m_log -> genre));
 
 //director 입력
-  fscanf(movie_file, "%c", &tmp);
-  while (tmp != ':'){
-    size++;
-    fscanf(movie_file, "%c", &tmp);
-  }
-
-    m_log -> director = (char *)malloc(sizeof(char) * size + 1);
-    fseek(movie_file, -(size + 1), SEEK_CUR);
-
-    fscanf(movie_file, "%c", &tmp);
-    for (int i = 0; tmp != ':'; i++){
-      *((m_log -> director) + i) = tmp;
-      fscanf(movie_file, "%c", &tmp);
-    }
-    size = 0;
+  string_input(movie_file, &(m_log -> director));
 
 //year 입력
-  fscanf(movie_file, "%c", &tmp);
-  while (tmp != ':'){
-    size++;
-    fscanf(movie_file, "%c", &tmp);
-  }
-
-    m_log -> year = (char *)malloc(sizeof(char) * size + 1);
-    fseek(movie_file, -(size + 1), SEEK_CUR);
-
-    fscanf(movie_file, "%c", &tmp);
-    for (int i = 0; tmp != ':'; i++){
-      *((m_log -> year) + i) = tmp;
-      fscanf(movie_file, "%c", &tmp);
-    }
+  string_input(movie_file, &(m_log -> year));
     size = 0;
 
 //run_time 입력
-  fscanf(movie_file, "%c", &tmp);
-  while (tmp != ':'){
-    size++;
-    fscanf(movie_file, "%c", &tmp);
-  }
 
-    m_log -> run_time = (char *)malloc(sizeof(char) * size + 1);
-    fseek(movie_file, -(size + 1), SEEK_CUR);
-
-    fscanf(movie_file, "%c", &tmp);
-    for (int i = 0; tmp != ':'; i++){
-      *((m_log -> run_time) + i) = tmp;
-      fscanf(movie_file, "%c", &tmp);
-    }
-    size = 0;
+    string_input(movie_file, &(m_log -> run_time));
 
 //actor은 어떻게 입력하징
 
@@ -218,7 +120,7 @@ while (tmp != ':'){
 
 }
 
-void string_input(FILE *movie_file, char *subject){
+void string_input(FILE *movie_file, char **subject){ //반복되는 문장 함수로 만들어보는중
   char tmp;
   char *s_tmp;
   int size;
@@ -228,17 +130,16 @@ void string_input(FILE *movie_file, char *subject){
     fscanf(movie_file, "%c", &tmp);
   }
 
-    subject = (char *)malloc(sizeof(char) * size + 1);
+    (*subject) = (char *)malloc(sizeof(char) * size + 1);
     fseek(movie_file, -(size + 1), SEEK_CUR);
 
     fscanf(movie_file, "%c", &tmp);
     for (int i = 0; tmp != ':'; i++){
-      *(subject + i) = tmp;
+      *(*subject + i) = tmp;    //**(subject + i)와 *(*subject + i)의 차이점??
       fscanf(movie_file, "%c", &tmp);
     }
 
     size = 0;
-    printf("%s", subject);
 }
 
 
