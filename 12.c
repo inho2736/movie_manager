@@ -3,19 +3,6 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
-void updatem(char*);
-void deletem(char *);
-void quit(int);
-void flush(void);
-void start(void);
-void addm(void);
-void addd(void);
-void adda(void);
-void command(void);
-void changes(char *);
-//void link_input(FILE *file, m_director *movie_director)
-//void actor_link_input(FILE *file, m_actor *movie_actor)
-//void title_link_input(FILE *file, m_title *director_title)
 
 typedef struct d_title{
   char * title;
@@ -38,7 +25,6 @@ typedef struct m_actor{
 typedef struct m_director{
   char * director;
   director *link;
-  struct m_director *next;
 }m_director;
 typedef struct movie{
   char * serial_number;
@@ -64,11 +50,29 @@ typedef struct actor{
   struct actor * next;
 }actor;
 
+void updatem(char*);
+void deletem(char *);
+void quit(int);
+void flush(void);
+void start(void);
+void addm(void);
+void addd(void);
+void adda(void);
+void command(movie *, director *, actor*);
+void changes(char *);
+void add_log(movie *);
+void movie_test(movie *);
 int main(void)
 {
   signal(SIGINT, (void*)quit);
+  movie * m_log = (movie *)malloc(sizeof(movie)*1);
+  m_log -> serial_number = NULL;
+  director * d_log = (director * )malloc(sizeof(director)*1);
+  d_log -> serial_number = NULL;
+  actor * a_log = (actor * )malloc(sizeof(actor)*1);
+  a_log -> serial_number = NULL;
   start();
-  command();
+  command(m_log, d_log, a_log);
   return 0;
 }
 void start(void)
@@ -80,7 +84,7 @@ void flush(void)
 {
   while(getchar()!='\n');
 }
-void command(void)
+void command(movie * m_log, director * d_log, actor* a_log)
 {
   char *order=(char *)malloc(100);
 	char *minopt=(char*)malloc(100);
@@ -479,95 +483,6 @@ void deletem(char * num)
     //fprintf(movie_log,"delete");
   }
 }
-/*void link_input(FILE *file, m_director *movie_director)
-{
-  char tmp;
-  int size = 0;
-
-  fscanf(file, "%c", &tmp);   //동적 메모리 할당을 위해 입력받는 string의 크기 알아보기
-  while ((tmp != '\n') && (feof(file) == 0) && (tmp != ':')) {
-    while ((tmp != ':') && (tmp != ',')){
-      size++;
-      fscanf(file, "%c", &tmp);
-    }
-
-      movie_director -> director = (char *)malloc(sizeof(char) * size + 1); //NULL까지 고려하여 동적 메모리 할당
-      fseek(file, -(size + 1), SEEK_CUR); //파일 위치 지시자를 읽기 시작했던 곳으로 돌림
-
-      fscanf(file, "%c", &tmp);         // tmp에 먼저 저장하여 :가 나오기 전까지 subject 스트링에 입력
-      for (int i = 0; (tmp != ':') && (tmp != ','); i++){
-        *(movie_director -> director + i) = tmp;    //**(subject + i)와 *(*subject + i)의 차이점??
-        fscanf(file, "%c", &tmp);
-      }
-      size = 0;
-  }
-}
-void actor_link_input(FILE *file, m_actor *movie_actor)
-{
-  char tmp;
-  int size = 0;
-
-  fscanf(file, "%c", &tmp);   //동적 메모리 할당을 위해 입력받는 string의 크기 알아보기
-    while ((tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0 )){
-      size++;
-      fscanf(file, "%c", &tmp);
-    }
-
-      movie_actor -> actor = (char *)malloc(sizeof(char) * size + 1); //NULL까지 고려하여 동적 메모리 할당
-
-      if (feof(file) == 0)    // 파일의 끝일 경우 ',' 뒤의 스페이스가 문자열에 들어가므로 이를 방지
-        fseek(file, -(size + 1), SEEK_CUR);
-      else
-        fseek(file, -size, SEEK_CUR);
-
-      fscanf(file, "%c", &tmp);         // tmp에 먼저 저장하여 :가 나오기 전까지 subject 스트링에 입력
-      for (int i = 0; (tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0); i++){
-        *(movie_actor -> actor + i) = tmp;
-        fscanf(file, "%c", &tmp);
-      }
-      printf("%s\n", (movie_actor -> actor));
-      size = 0;
-
-  if (tmp == ','){
-    fseek(file, 1, SEEK_CUR); // ','뒤의 띄어쓰기 방지
-    (movie_actor -> next) = (m_actor *)malloc(sizeof(m_actor));
-    movie_actor = movie_actor -> next;
-    actor_link_input(file, movie_actor);
-  }
-}
-void title_link_input(FILE *file, m_title *director_title)
-{
-  char tmp;
-  int size = 0;
-
-  fscanf(file, "%c", &tmp);   //동적 메모리 할당을 위해 입력받는 string의 크기 알아보기
-    while ((tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0 )){
-      size++;
-      fscanf(file, "%c", &tmp);
-    }
-
-      director_title -> title = (char *)malloc(sizeof(char) * size + 1); //NULL까지 고려하여 동적 메모리 할당
-
-      if (feof(file) == 0)    // 파일의 끝일 경우 ',' 뒤의 스페이스가 문자열에 들어가므로 이를 방지
-        fseek(file, -(size + 1), SEEK_CUR);
-      else
-        fseek(file, -size, SEEK_CUR);
-
-      fscanf(file, "%c", &tmp);         // tmp에 먼저 저장하여 :가 나오기 전까지 subject 스트링에 입력
-      for (int i = 0; (tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0); i++){
-        *(director_title -> title + i) = tmp;
-        fscanf(file, "%c", &tmp);
-      }
-      printf("%s\n", (director_title -> title));
-      size = 0;
-
-  if (tmp == ','){
-    fseek(file, 1, SEEK_CUR);
-    (director_title -> next) = (m_title *)malloc(sizeof(m_title)); // 무조건 메모리를 주고 접근해야함
-    director_title = director_title -> next;
-    title_link_input(file, director_title);
-  }
-}*/
 void updatem(char * string)
 {
   char * option = (char*)malloc(sizeof(char)*50);
@@ -584,6 +499,67 @@ void updatem(char * string)
     option = strtok(string, token);
     num = strtok(NULL, token);
     printf("%s %s", option, num);
+  }
+
+}
+void add_log(movie * m_log, movie * tmp_m_log) // 인자로 시리얼넘버부터 액터까지 다 받음 char *형으로
+{// 앞 m-log는 처음시작 주소, tmp_m_log는 연결해서 구조체 만들때 사용 -> next주소값을 만들때마다 넣어줘야함.
+  m_log = (movie *)malloc(sizeof(movie)*1);
+  char * token = (char*)malloc(sizeof(char)*2);
+  char * string_cut;
+  struct m_actor * move;
+  struct m_actor * m_a_tmp;
+  *(token + 0) = ',';
+  *(token + 1) = '\n';
+  m_log -> movie_actor = (m_actor *)malloc(sizeof(m_actor)*1);
+  m_log -> movie_director = (m_director *)malloc(sizeof(m_director)*1);
+  //m_log -> serial_number = ;
+  //m_log -> genre = ;
+  //m_log -> movie_director -> director = ; // 링크연결
+  //m_log -> year = ;
+  //m_log -> run_time = ;
+  //
+  m_log -> movie_actor -> actor = strtok(whole_string, token);// whole_string은 배우이름들 통째로
+  m_log -> movie_actor -> link = NULL; // 링크연결
+  m_log -> movie_actor -> next = (struct m_actor *)malloc(sizeof(struct m_actor));
+  move = m_log -> movie_actor -> next;
+  m_a_tmp = m_log-> movie_actor;
+  while ((string_cut = strtok(NULL, token))!=NULL)
+  {
+    move -> actor = string_cut;
+    move -> link = NULL;// 링크연결
+    move -> next =  (struct m_actor *)malloc(sizeof(struct m_actor));
+    move = move -> next;
+    move -> next = NULL;
+  }
+
+
+}
+void movie_test(movie * m_log)
+{
+  movie * tmp;
+  m_actor * m_a_tmp;
+  m_a_tmp = m_log -> movie_actor;
+  tmp = m_log;
+  while(1)// 맨 마지막 무비는 어떻게 출력?
+  {
+    printf("%s\n", tmp -> serial_number);
+    printf("%s\n", tmp -> title);
+    printf("%s\n", tmp -> genre);
+    printf("%s\n", tmp -> movie_director -> director);
+    printf("%s\n", tmp -> year);
+    printf("%s\n", tmp -> run_time);
+    while (1)
+    {
+      printf("%s")
+    }
+    if((tmp -> next)!= NULL);
+      break;
+      tmp = tmp -> next;
+  }
+  if ((tmp -> next)== NULL)
+  {
+
   }
 
 }
