@@ -81,7 +81,7 @@ int main(void)
 
   signal(SIGINT, (void*)quit);
   input_log(&m_log, &a_log, &d_log);
-  //printf("%s\n", m_log -> title);
+  printf("%s\n", m_log -> title);
   //m_log_print(m_log);
   start();
   command();
@@ -96,6 +96,7 @@ void input_log(movie **m_log, actor **a_log, director **d_log){
 }
 
 void input_m_log(movie **m_log, FILE *m_file) {
+  movie *tmp_mlog = *m_log;
   char *tag;
   char *serial_number;
   char *title;
@@ -106,30 +107,34 @@ void input_m_log(movie **m_log, FILE *m_file) {
   char *movie_actor;
   char tmp;
   static int count = 0;
-  if (count == 0)
-    fseek(m_file, 0, SEEK_SET);
-  string_input(m_file, &tag);
-  if (count == 0)
-    tag = tag+3;
-  string_input(m_file, &serial_number);
-  string_input(m_file, &title);
-  string_input(m_file, &genre);
-  string_input(m_file, &movie_director);
-  string_input(m_file, &year);
-  string_input(m_file, &run_time);
-  string_input(m_file, &movie_actor);
-  if (strcmp(tag, "add") == 0)
-    add_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
-  else if (strcmp(tag, "delete") == 0)
-    delete_mlog(m_log, serial_number);
-  printf("밖함수 : %s\n", (*m_log) -> serial_number);
-  count++;
+
+  while (feof(m_file) == 0){
+    printf("%d번째 루프 ================\n", count);
+
+    if (count == 0)
+      fseek(m_file, 0, SEEK_SET);
+    string_input(m_file, &tag);
+
+    if (count == 0)
+      tag = tag+3;
+    string_input(m_file, &serial_number);
+    string_input(m_file, &title);
+    string_input(m_file, &genre);
+    string_input(m_file, &movie_director);
+    string_input(m_file, &year);
+    string_input(m_file, &run_time);
+    string_input(m_file, &movie_actor);
+    printf("%s\n", movie_actor);
+    if (strcmp(tag, "add") == 0)
+      add_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+    else if (strcmp(tag, "delete") == 0)
+      delete_mlog(m_log, serial_number);
+    //printf("밖함수 : %s\n", (*m_log) -> serial_number);
+    count++;
+}
 
 
-  if (feof(m_file) == 0){
-    m_log = &((*m_log) -> next);
-    input_m_log(m_log, m_file);
-  }
+
 
 
 
@@ -606,17 +611,17 @@ void add_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *
     tmp_m_log = *m_log;
   }
   else
-  {
-    tmp_m_log = (*m_log) -> next;
-    while(1)
     {
-      if((tmp_m_log -> next)== NULL)
-      break;
-      tmp_m_log = tmp_m_log -> next;
+      tmp_m_log = (*m_log) -> next;
+      while(1)
+      {
+        if(tmp_m_log== NULL)
+        break;
+        tmp_m_log = tmp_m_log -> next;
+      }
+      tmp_m_log  = (movie*)malloc(sizeof(movie));
+
     }
-    tmp_m_log -> next = (movie*)malloc(sizeof(movie));
-    tmp_m_log = tmp_m_log -> next;
-  }
 
   tmp_m_log -> movie_actor = (m_actor *)malloc(sizeof(m_actor)*1);
   tmp_m_log -> movie_director = (m_director *)malloc(sizeof(m_director)*1);
