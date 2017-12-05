@@ -38,7 +38,6 @@ typedef struct m_actor{
 typedef struct m_director{
   char * director;
   director *link;
-  struct m_director *next;
 }m_director;
 typedef struct movie{
   char * serial_number;
@@ -64,9 +63,11 @@ typedef struct actor{
   struct actor * next;
 }actor;
 
-void input_log(movie *, actor *, director *);
+void input_m_log(movie **, FILE *);
+void input_log(movie **, actor **, director **);
 void string_input(FILE *, char **);
-void add_mlog(movie *, char*, char*, char*, char*, char*, char*, char*);
+void add_mlog(movie **, char*, char*, char*, char*, char*, char*, char*);
+void m_log_print(movie *);
 
 
 int main(void)
@@ -78,15 +79,22 @@ int main(void)
   director *d_log = (director *)malloc(sizeof(director));
   d_log = NULL;
   signal(SIGINT, (void*)quit);
-  input_log(m_log, a_log, d_log);
-  m_log_print(m_log);
+  input_log(&m_log, &a_log, &d_log);
+  printf("2번째 구조체 : %s\n", m_log -> next -> title);
+  //m_log_print(m_log);
   start();
   command();
   return 0;
 }
 
-void input_log(movie *m_log, actor *a_log, director *d_log) {
+void input_log(movie **m_log, actor **a_log, director **d_log){
   FILE *m_file = fopen("movie_log.txt", "r");
+  FILE *a_file = fopen("actor_log.txt", "r");
+  FILE *d_file = fopen("director_log.txt", "r");
+  input_m_log(m_log, m_file);
+}
+
+void input_m_log(movie **m_log, FILE *m_file) {
   char *tag;
   char *serial_number;
   char *title;
@@ -95,8 +103,12 @@ void input_log(movie *m_log, actor *a_log, director *d_log) {
   char *year;
   char *run_time;
   char *movie_actor;
-  int size;
+  char tmp;
+  static int count = 0;
+  if (count == 0)
+    fseek(m_file, 0, SEEK_SET);
   string_input(m_file, &tag);
+
   string_input(m_file, &serial_number);
   string_input(m_file, &title);
   string_input(m_file, &genre);
@@ -105,6 +117,17 @@ void input_log(movie *m_log, actor *a_log, director *d_log) {
   string_input(m_file, &run_time);
   string_input(m_file, &movie_actor);
   add_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+  count++;
+
+
+  if (feof(m_file) == 0){
+    m_log = &((*m_log) -> next);
+    input_m_log(m_log, m_file);
+  }
+
+
+
+
 }
 void m_log_print(movie *m_log){
   m_actor *a_list = m_log -> movie_actor;
@@ -114,10 +137,12 @@ void m_log_print(movie *m_log){
   printf("%s\n", m_log -> movie_director -> director);
   printf("%s\n", m_log -> year);
   printf("%s\n", m_log -> run_time);
+
   while(a_list != NULL){
     printf("%s\n", a_list -> actor);
     a_list = a_list -> next;
   }
+
 }
 void string_input(FILE *movie_file, char **subject){
   char tmp;
@@ -131,20 +156,20 @@ void string_input(FILE *movie_file, char **subject){
     fscanf(movie_file, "%c", &tmp);
   }
 
+
     (*subject) = (char *)malloc(sizeof(char) * size + 1); //NULL까지 고려하여 동적 메모리 할당
     fseek(movie_file, -(size + 1), SEEK_CUR); //파일 위치 지시자를 읽기 시작했던 곳으로 돌림
 
     fscanf(movie_file, "%c", &tmp);         // tmp에 먼저 저장하여 :가 나오기 전까지 subject 스트링에 입력
-
     if (tmp == '\n')                        //첫번째 줄에서 두번째 줄 넘어갈 때 \n이 tag에 들어가는 것 방지
+      fscanf(movie_file, "%c", &tmp);
+    if (tmp == ':')
       fscanf(movie_file, "%c", &tmp);
 
     for (int i = 0; (tmp != ':') && (tmp != '\n') && feof(movie_file) == 0 ; i++){
       *(*subject + i) = tmp;
       fscanf(movie_file, "%c", &tmp);
     }
-
-
     size = 0;
 }
 
@@ -557,7 +582,7 @@ void deletem(char * num)
     //fprintf(movie_log,"delete");
   }
 }
-void add_mlog(movie * m_log, char *serial_number,char *title,char *genre,char *movie_director,char *year,char *run_time,char * whole_string) // 인자로 시리얼넘버부터 액터까지 다 받음 char *형으로
+void add_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *movie_director,char *year,char *run_time,char * whole_string) // 인자로 시리얼넘버부터 액터까지 다 받음 char *형으로
 {// 앞 m-log는 처음시작 주소, tmp_m_log는 연결해서 구조체 만들때 사용 -> next주소값을 만들때마다 넣어줘야함.
 
   movie * tmp_m_log;
@@ -565,17 +590,18 @@ void add_mlog(movie * m_log, char *serial_number,char *title,char *genre,char *m
   char * string_cut;
   struct m_actor * move;
   struct m_actor * m_a_tmp;
+  struct m_actor * space;
   *(token + 0) = ',';
   *(token + 1) = '\n';
 
-  if (m_log == NULL)// tmp_m_log이 마지막 구조체를 가리키게함.
+  if (*m_log == NULL)// tmp_m_log이 마지막 구조체를 가리키게함.
   {
-    m_log = (movie *)malloc(sizeof(movie)*1);
-    tmp_m_log = m_log;
+    (*m_log) = (movie *)malloc(sizeof(movie)*1);
+    tmp_m_log = *m_log;
   }
   else
   {
-    tmp_m_log = m_log -> next;
+    tmp_m_log = (*m_log) -> next;
     while(1)
     {
       if((tmp_m_log -> next)== NULL)
@@ -600,7 +626,7 @@ void add_mlog(movie * m_log, char *serial_number,char *title,char *genre,char *m
   tmp_m_log -> movie_actor -> link = NULL; // 링크연결
   tmp_m_log -> movie_actor -> next = (struct m_actor *)malloc(sizeof(struct m_actor));
   move = tmp_m_log -> movie_actor -> next;
-  m_a_tmp = tmp_m_log-> movie_actor;
+  space = tmp_m_log-> movie_actor;
   while ((string_cut = strtok(NULL, token))!=NULL)
   {
     move -> actor = string_cut;
@@ -609,6 +635,12 @@ void add_mlog(movie * m_log, char *serial_number,char *title,char *genre,char *m
     move = move -> next;
     move -> next = NULL;
   }
+  while (space->next != NULL)
+   {
+      if (*(space->actor) == ' ')
+         space->actor = (space->actor) + 1;
+      space = space->next;
+   }
 
 
 }
