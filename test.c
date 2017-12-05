@@ -68,7 +68,7 @@ void input_log(movie **, actor **, director **);
 void string_input(FILE *, char **);
 void add_mlog(movie **, char*, char*, char*, char*, char*, char*, char*);
 void m_log_print(movie *);
-
+void delete_mlog(movie ** , char *);
 
 int main(void)
 {
@@ -78,9 +78,10 @@ int main(void)
   a_log = NULL;
   director *d_log = (director *)malloc(sizeof(director));
   d_log = NULL;
+
   signal(SIGINT, (void*)quit);
   input_log(&m_log, &a_log, &d_log);
-  printf("2번째 구조체 : %s\n", m_log -> next -> title);
+  //printf("%s\n", m_log -> title);
   //m_log_print(m_log);
   start();
   command();
@@ -108,7 +109,8 @@ void input_m_log(movie **m_log, FILE *m_file) {
   if (count == 0)
     fseek(m_file, 0, SEEK_SET);
   string_input(m_file, &tag);
-
+  if (count == 0)
+    tag = tag+3;
   string_input(m_file, &serial_number);
   string_input(m_file, &title);
   string_input(m_file, &genre);
@@ -116,7 +118,11 @@ void input_m_log(movie **m_log, FILE *m_file) {
   string_input(m_file, &year);
   string_input(m_file, &run_time);
   string_input(m_file, &movie_actor);
-  add_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+  if (strcmp(tag, "add") == 0)
+    add_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+  else if (strcmp(tag, "delete") == 0)
+    delete_mlog(m_log, serial_number);
+  printf("밖함수 : %s\n", (*m_log) -> serial_number);
   count++;
 
 
@@ -146,11 +152,11 @@ void m_log_print(movie *m_log){
 }
 void string_input(FILE *movie_file, char **subject){
   char tmp;
-  int size;
+  int size = 0;
 
   fscanf(movie_file, "%c", &tmp); //동적 메모리 할당을 위해 입력받는 string의 크기 알아보기
   if (tmp == '\n')                        //첫번째 줄에서 두번째 줄 넘어갈 때 \n이 tag에 들어가는 것 방지
-    fscanf(movie_file, "%c", &tmp);
+    fscanf(movie_file, "%c\n", &tmp);
   while ((tmp != ':') && (tmp != '\n') && feof(movie_file) == 0) {
     size++;
     fscanf(movie_file, "%c", &tmp);
@@ -643,6 +649,34 @@ void add_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *
    }
 
 
+}
+
+void delete_mlog(movie ** m_log, char *serial_number)
+{
+  printf("안함수 : %s\n", (*m_log) -> serial_number);
+  movie ** tmp;
+  tmp = m_log;
+
+  if (strcmp(((*tmp) -> serial_number), serial_number) == 0)
+  {
+
+    *m_log = (*tmp) -> next;
+    return;
+  }
+  while (1)
+  {
+    if (strcmp(((*tmp) -> next -> serial_number), serial_number) == 0)
+    {
+      if((*tmp) -> next -> next == NULL)
+      {
+        (*tmp) -> next = NULL;
+        break;
+      }
+      (*tmp) -> next = (*tmp) -> next -> next;
+      break;
+    }
+    (*tmp) = (*tmp) -> next;
+  }
 }
 
 /*void link_input(FILE *file, m_director *movie_director)
