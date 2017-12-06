@@ -16,10 +16,6 @@ void addd(void);
 void adda(void);
 void command(void);
 void changes(char *);
-//void link_input(FILE *file, m_director *movie_director)
-//void actor_link_input(FILE *file, m_actor *movie_actor)
-//void title_link_input(FILE *file, m_title *director_title)
-
 typedef struct d_title{
   char * title;
   struct movie * link;
@@ -59,12 +55,12 @@ typedef struct a_title{
 }a_title;
 typedef struct actor{
   char * serial_number;
-  char * actor;
+  char * a_name;
   char * s;
   char * birth;
   struct a_title * actor_title;
   struct actor * next;
-}actor;
+} actor;
 
 void input_m_log(movie **, FILE *);
 void input_log(movie **, actor **, director **);
@@ -78,6 +74,9 @@ void add_dlog(director **, char *, char *, char *, char *, char *);
 void delete_dlog(director **, char *);
 void input_a_log(actor **, FILE *);
 void add_alog(actor **, char *, char *, char *, char *, char *);
+void delete_alog(actor **, char *);
+void update_dlog(director **, char *,char *,char *,char *, char *);
+void update_alog(actor ** , char *, char *, char *,char *, char * );
 
 int main(void)
 {
@@ -87,13 +86,8 @@ int main(void)
   a_log = NULL;
   director *d_log = (director *)malloc(sizeof(director));
   d_log = NULL;
-
   signal(SIGINT, (void*)quit);
   input_log(&m_log, &a_log, &d_log);
-  printf("세번째 : %s\n", m_log ->  movie_actor -> actor);
-  printf("세번째 : %s\n", m_log ->  next-> movie_actor -> actor);
-  printf("세번째 : %s\n", m_log -> next-> next-> movie_actor -> actor);
-  //m_log_print(m_log);
   start();
   command();
   return 0;
@@ -105,6 +99,7 @@ void input_log(movie **m_log, actor **a_log, director **d_log){
   FILE *d_file = fopen("director_log.txt", "r");
   input_m_log(m_log, m_file);
   input_d_log(d_log, d_file);
+  input_a_log(a_log, a_file);
 }
 
 void input_m_log(movie **m_log, FILE *m_file) {
@@ -183,16 +178,16 @@ void input_d_log(director **d_log, FILE *d_file) {
 
     else if (strcmp(tag, "delete") == 0){
       delete_dlog(d_log, serial_number);
-    }/*
+    }
     else if (strcmp(tag, "update") == 0){
-      update_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
-    }*/
+      update_dlog(d_log, serial_number, d_name, s, birth, director_title);
+    }
     count++;
 
     printf("%d번재 루프 끝 -----------------\n\n", count);
   }
 }
-/*void input_a_log(actor **a_log, FILE *a_file) {
+void input_a_log(actor **a_log, FILE *a_file) {
   char *tag;
   char *serial_number;
   char *actor;
@@ -219,21 +214,18 @@ void input_d_log(director **d_log, FILE *d_file) {
       add_alog(a_log, serial_number, actor, s, birth, actor_title);
       add_a_number ++;
     }
-    /*
     else if (strcmp(tag, "delete") == 0){
       delete_alog(a_log, serial_number);
-    }/*
+    }
+
     else if (strcmp(tag, "update") == 0){
-      update_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+      update_alog(a_log, serial_number, actor, s, birth, actor_title);
     }
     count++;
 
     printf("%d번재 루프 끝 -----------------\n\n", count);
   }
 }
-*/
-
-
 void add_dlog(director ** d_log, char *serial_number, char *d_name, char *s, char *birth, char *whole_string){
   director ** tmp_d_log;
   char * token = (char*)malloc(sizeof(char)*2);
@@ -290,7 +282,7 @@ void add_dlog(director ** d_log, char *serial_number, char *d_name, char *s, cha
    }
 
 }
-/*void add_alog(actor ** a_log, char *serial_number, char *actor, char *s, char *birth, char *whole_string){
+void add_alog(actor ** a_log, char *serial_number, char *a_name, char *s, char *birth, char *whole_string){
   actor ** tmp_a_log;
   char * token = (char*)malloc(sizeof(char)*2);
   char * string_cut;
@@ -300,7 +292,7 @@ void add_dlog(director ** d_log, char *serial_number, char *d_name, char *s, cha
   *(token + 0) = ',';
   *(token + 1) = '\n';
 
-  if (*a_log == NULL)// tmp_m_log이 마지막 구조체를 가리키게함.
+  if (*a_log == NULL)
   {
     (*a_log) = (actor *)malloc(sizeof(actor)*1);
     tmp_a_log = a_log;
@@ -318,12 +310,13 @@ void add_dlog(director ** d_log, char *serial_number, char *d_name, char *s, cha
 
     }
 
-  (*tmp_a_log) -> director_title= (a_title *)malloc(sizeof(a_title)*1);
+  (*tmp_a_log) -> actor_title= (a_title *)malloc(sizeof(a_title)*1);
   (*tmp_a_log) -> serial_number = serial_number;
-  (*tmp_a_log) -> actor = actor;
+  (*tmp_a_log) -> a_name = a_name;
   (*tmp_a_log) -> s = s;
   (*tmp_a_log) -> birth = birth;
   (*tmp_a_log) -> next = NULL;
+  printf("add함수내 : %s\n", (*tmp_a_log) -> a_name);
 
   (*tmp_a_log) -> actor_title -> title = strtok(whole_string, token);// whole_string은 배우이름들 통째로
   (*tmp_a_log) -> actor_title -> link = NULL; // 링크연결
@@ -346,7 +339,6 @@ void add_dlog(director ** d_log, char *serial_number, char *d_name, char *s, cha
    }
 
 }
-*/
 void m_log_print(movie *m_log){
   m_actor *a_list = m_log -> movie_actor;
   printf("%s\n", m_log -> serial_number);
@@ -483,6 +475,216 @@ void update_mlog(movie ** m_log, char *serial_number,char *title,char *genre,cha
 
 
 }//함수
+void update_dlog(director ** d_log, char *serial_number,char *d_name,char *s,char *birth, char * whole_string)
+{
+
+  director ** tmp;
+  tmp = d_log;
+
+  char * token = (char*)malloc(sizeof(char)*2);
+  char * string_cut;
+  struct d_title * move;
+  struct d_title * d_t_tmp;
+  struct d_title * space;
+  *(token + 0) = ',';
+  *(token + 1) = '\n';
+
+  if (strcmp(((*tmp) -> serial_number), serial_number) == 0) // 첫번째일때
+  {
+    if(strcmp(d_name,"=") != 0)
+    {
+      (*d_log) -> d_name = d_name;
+    }
+    if(strcmp(s,"=") != 0)
+    {
+      (*d_log) -> s = s;
+    }
+    if(strcmp(birth,"=") != 0)
+    {
+      (*d_log) -> birth  = birth;
+    }
+    if(strcmp(whole_string,"=") != 0)
+    {
+      (*d_log) ->director_title = NULL;
+      (*d_log) ->director_title = (d_title *)malloc(sizeof(d_title));
+      (*d_log) ->director_title -> title  = strtok(whole_string, token);
+      (*d_log) ->director_title -> link = NULL;//링크추가
+      (*d_log) ->director_title -> next = (d_title *)malloc(sizeof( d_title));
+
+      move = (*d_log) -> director_title -> next;
+      space = (*d_log)-> director_title;
+      while ((string_cut = strtok(NULL, token))!=NULL)
+      {
+        move -> title = string_cut;
+        move -> link = NULL;// 링크연결
+        move -> next =  (struct d_title *)malloc(sizeof(struct d_title));
+        move = move -> next;
+        move -> next = NULL;
+      }
+      while (space->next != NULL)
+       {
+          if (*(space->title) == ' ')
+             space->title = (space->title) + 1;
+          space = space->next;
+       }
+    }
+
+    return;
+  }
+  while(1)
+  {
+    if (strcmp(((*tmp) -> next -> serial_number), serial_number) == 0)
+    {
+      if(strcmp(d_name,"=") != 0)
+      {
+        (*tmp) -> next ->d_name = d_name;
+      }
+      if(strcmp(s,"=") != 0)
+      {
+        (*tmp) ->next ->s = s;
+      }
+      if(strcmp(birth,"=") != 0)
+      {
+        (*tmp) ->next ->birth  = birth;
+      }
+      if(strcmp(whole_string,"=") != 0)
+      {
+        (*tmp) ->next ->director_title = NULL;
+        (*tmp) ->next ->director_title = (d_title *)malloc(sizeof(d_title));
+        (*tmp) ->next ->director_title -> title  = strtok(whole_string, token);
+        (*tmp) ->next ->director_title -> link = NULL;//링크추가
+        (*tmp) ->next ->director_title -> next = (d_title *)malloc(sizeof( d_title));
+
+        move = (*tmp) -> next ->director_title -> next;
+        space = (*tmp)-> next ->director_title;
+        while ((string_cut = strtok(NULL, token))!=NULL)
+        {
+          move -> title = string_cut;
+          move -> link = NULL;// 링크연결
+          move -> next =  (struct d_title *)malloc(sizeof(struct d_title));
+          move = move -> next;
+          move -> next = NULL;
+        }
+        while (space->next != NULL)
+         {
+            if (*(space->title) == ' ')
+               space->title = (space->title) + 1;
+            space = space->next;
+         }
+       }// actor
+
+      return;
+     }
+    (*tmp) = (*tmp) -> next;
+  }//while
+
+
+}//함수
+void update_alog(actor ** a_log, char *serial_number,char *a_name,char *s,char *birth, char * whole_string)
+{
+
+  actor ** tmp;
+  tmp = a_log;
+
+  char * token = (char*)malloc(sizeof(char)*2);
+  char * string_cut;
+  struct a_title * move;
+  struct a_title * a_t_tmp;
+  struct a_title * space;
+  *(token + 0) = ',';
+  *(token + 1) = '\n';
+
+  if (strcmp(((*tmp) -> serial_number), serial_number) == 0) // 첫번째일때
+  {
+    if(strcmp(a_name,"=") != 0)
+    {
+      (*a_log) -> a_name = a_name;
+    }
+    if(strcmp(s,"=") != 0)
+    {
+      (*a_log) -> s = s;
+    }
+    if(strcmp(birth,"=") != 0)
+    {
+      (*a_log) -> birth  = birth;
+    }
+    if(strcmp(whole_string,"=") != 0)
+    {
+      (*a_log) ->actor_title = NULL;
+      (*a_log) ->actor_title= (a_title *)malloc(sizeof(a_title));
+      (*a_log) ->actor_title -> title  = strtok(whole_string, token);
+      (*a_log) ->actor_title -> link = NULL;//링크추가
+      (*a_log) ->actor_title -> next = (a_title *)malloc(sizeof( a_title));
+
+      move = (*a_log) -> actor_title -> next;
+      space = (*a_log)-> actor_title;
+      while ((string_cut = strtok(NULL, token))!=NULL)
+      {
+        move -> title = string_cut;
+        move -> link = NULL;// 링크연결
+        move -> next =  (struct a_title *)malloc(sizeof(struct a_title));
+        move = move -> next;
+        move -> next = NULL;
+      }
+      while (space->next != NULL)
+       {
+          if (*(space->title) == ' ')
+             space->title = (space->title) + 1;
+          space = space->next;
+       }
+    }
+
+    return;
+  }
+  while(1)
+  {
+    if (strcmp(((*tmp) -> next -> serial_number), serial_number) == 0)
+    {
+      if(strcmp(a_name,"=") != 0)
+      {
+        (*tmp) -> next ->a_name = a_name;
+      }
+      if(strcmp(s,"=") != 0)
+      {
+        (*tmp) ->next ->s = s;
+      }
+      if(strcmp(birth,"=") != 0)
+      {
+        (*tmp) ->next ->birth  = birth;
+      }
+      if(strcmp(whole_string,"=") != 0)
+      {
+        (*tmp) ->next ->actor_title = NULL;
+        (*tmp) ->next ->actor_title = (a_title *)malloc(sizeof(a_title));
+        (*tmp) ->next ->actor_title -> title  = strtok(whole_string, token);
+        (*tmp) ->next ->actor_title -> link = NULL;//링크추가
+        (*tmp) ->next ->actor_title -> next = (a_title *)malloc(sizeof( a_title));
+
+        move = (*tmp) -> next ->actor_title -> next;
+        space = (*tmp)-> next ->actor_title;
+        while ((string_cut = strtok(NULL, token))!=NULL)
+        {
+          move -> title = string_cut;
+          move -> link = NULL;// 링크연결
+          move -> next =  (struct a_title *)malloc(sizeof(struct a_title));
+          move = move -> next;
+          move -> next = NULL;
+        }
+        while (space->next != NULL)
+         {
+            if (*(space->title) == ' ')
+               space->title = (space->title) + 1;
+            space = space->next;
+         }
+       }// actor
+
+      return;
+     }
+    (*tmp) = (*tmp) -> next;
+  }//while
+
+
+}//함수
 void string_input(FILE *movie_file, char **subject){
   char tmp;
   int size = 0;
@@ -511,8 +713,6 @@ void string_input(FILE *movie_file, char **subject){
     }
     size = 0;
 }
-
-
 void start(void)
 {
   printf(">>Welcome to My Movie <<\n");
@@ -1046,96 +1246,32 @@ void delete_mlog(movie ** m_log, char *serial_number)
     (*tmp) = (*tmp) -> next;
   }
 }
-
-/*void link_input(FILE *file, m_director *movie_director)
+void delete_alog(actor ** a_log, char *serial_number)
 {
-  char tmp;
-  int size = 0;
 
-  fscanf(file, "%c", &tmp);   //동적 메모리 할당을 위해 입력받는 string의 크기 알아보기
-  while ((tmp != '\n') && (feof(file) == 0) && (tmp != ':')) {
-    while ((tmp != ':') && (tmp != ',')){
-      size++;
-      fscanf(file, "%c", &tmp);
-    }
+  actor ** tmp;
+  tmp = a_log;
 
-      movie_director -> director = (char *)malloc(sizeof(char) * size + 1); //NULL까지 고려하여 동적 메모리 할당
-      fseek(file, -(size + 1), SEEK_CUR); //파일 위치 지시자를 읽기 시작했던 곳으로 돌림
-
-      fscanf(file, "%c", &tmp);         // tmp에 먼저 저장하여 :가 나오기 전까지 subject 스트링에 입력
-      for (int i = 0; (tmp != ':') && (tmp != ','); i++){
-        *(movie_director -> director + i) = tmp;    //**(subject + i)와 *(*subject + i)의 차이점??
-        fscanf(file, "%c", &tmp);
+  if (strcmp(((*tmp) -> serial_number), serial_number) == 0)
+  {
+    *a_log = (*a_log) -> next;
+    return;
+  }
+  while (1)
+  {
+    if (strcmp(((*tmp) -> next -> serial_number), serial_number) == 0)
+    {
+      if((*tmp) -> next -> next == NULL)
+      {
+        (*tmp) -> next = NULL;
+        break;
       }
-      size = 0;
+      (*tmp) -> next = (*tmp) -> next -> next;
+      break;
+    }
+    (*tmp) = (*tmp) -> next;
   }
 }
-void actor_link_input(FILE *file, m_actor *movie_actor)
-{
-  char tmp;
-  int size = 0;
-
-  fscanf(file, "%c", &tmp);   //동적 메모리 할당을 위해 입력받는 string의 크기 알아보기
-    while ((tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0 )){
-      size++;
-      fscanf(file, "%c", &tmp);
-    }
-
-      movie_actor -> actor = (char *)malloc(sizeof(char) * size + 1); //NULL까지 고려하여 동적 메모리 할당
-
-      if (feof(file) == 0)    // 파일의 끝일 경우 ',' 뒤의 스페이스가 문자열에 들어가므로 이를 방지
-        fseek(file, -(size + 1), SEEK_CUR);
-      else
-        fseek(file, -size, SEEK_CUR);
-
-      fscanf(file, "%c", &tmp);         // tmp에 먼저 저장하여 :가 나오기 전까지 subject 스트링에 입력
-      for (int i = 0; (tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0); i++){
-        *(movie_actor -> actor + i) = tmp;
-        fscanf(file, "%c", &tmp);
-      }
-      printf("%s\n", (movie_actor -> actor));
-      size = 0;
-
-  if (tmp == ','){
-    fseek(file, 1, SEEK_CUR); // ','뒤의 띄어쓰기 방지
-    (movie_actor -> next) = (m_actor *)malloc(sizeof(m_actor));
-    movie_actor = movie_actor -> next;
-    actor_link_input(file, movie_actor);
-  }
-}
-void title_link_input(FILE *file, m_title *director_title)
-{
-  char tmp;
-  int size = 0;
-
-  fscanf(file, "%c", &tmp);   //동적 메모리 할당을 위해 입력받는 string의 크기 알아보기
-    while ((tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0 )){
-      size++;
-      fscanf(file, "%c", &tmp);
-    }
-
-      director_title -> title = (char *)malloc(sizeof(char) * size + 1); //NULL까지 고려하여 동적 메모리 할당
-
-      if (feof(file) == 0)    // 파일의 끝일 경우 ',' 뒤의 스페이스가 문자열에 들어가므로 이를 방지
-        fseek(file, -(size + 1), SEEK_CUR);
-      else
-        fseek(file, -size, SEEK_CUR);
-
-      fscanf(file, "%c", &tmp);         // tmp에 먼저 저장하여 :가 나오기 전까지 subject 스트링에 입력
-      for (int i = 0; (tmp != ':') && (tmp != ',') && (tmp != '\n') && (feof(file) == 0); i++){
-        *(director_title -> title + i) = tmp;
-        fscanf(file, "%c", &tmp);
-      }
-      printf("%s\n", (director_title -> title));
-      size = 0;
-
-  if (tmp == ','){
-    fseek(file, 1, SEEK_CUR);
-    (director_title -> next) = (m_title *)malloc(sizeof(m_title)); // 무조건 메모리를 주고 접근해야함
-    director_title = director_title -> next;
-    title_link_input(file, director_title);
-  }
-}*/
 void updatem(char * string)
 {
   char * option = (char*)malloc(sizeof(char)*50);
