@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/types.h>
+static int add_number = 0;
 void updatem(char*);
 void deletem(char *);
 void quit(int);
@@ -69,6 +70,7 @@ void string_input(FILE *, char **);
 void add_mlog(movie **, char*, char*, char*, char*, char*, char*, char*);
 void m_log_print(movie *);
 void delete_mlog(movie ** , char *);
+void update_mlog(movie ** , char *,char *,char *,char *,char *,char *,char *);
 
 int main(void)
 {
@@ -81,7 +83,7 @@ int main(void)
 
   signal(SIGINT, (void*)quit);
   input_log(&m_log, &a_log, &d_log);
-  printf("메인에서 첫번째%s\n", m_log -> title);
+  printf("메인에서 첫번째%s\n", m_log -> movie_actor -> next -> actor);
   printf("메인에서 두번째%s\n", m_log -> next -> title);
   printf("%s\n", m_log -> title);
   //m_log_print(m_log);
@@ -127,40 +129,20 @@ void input_m_log(movie **m_log, FILE *m_file) {
     string_input(m_file, &year);
     string_input(m_file, &run_time);
     string_input(m_file, &movie_actor);
-    if (strcmp(tag, "add") == 0)
+    if (strcmp(tag, "add") == 0){
       add_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+      add_number ++;
+    }
     else if (strcmp(tag, "delete") == 0){
-      /*
-      printf("딜리트 하기전 m_log : %s\n", (*m_log) -> title);
-      printf("딜리트 하기전 m_log : %s\n", (*m_log) -> serial_number);
-      printf("딜리트 하기전 m_log next -> : %s\n", (*m_log) -> next -> title);
-      printf("딜리트 하기전 m_log next -> : %s\n", (*m_log) -> next -> serial_number);
-      */
       delete_mlog(m_log, serial_number);
-            printf("딜리트 성공\n");
     }
-    //********88add함수에서 문제. 2-3-4-가 아닌 2-4로 연결됨. kingsman add할때 문제생긴듯
-
-    //printf("밖함수 : %s\n", (*m_log) -> serial_number);
-
+    else if (strcmp(tag, "update") == 0){
+      update_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+    }
     count++;
-    /*
-    if (count == 4){
-      printf("count : 4 %s\n", (*m_log) -> title);
-      printf("tag : %s\n", (*m_log) -> serial_number);
-      printf("count : 4 %s\n", (*m_log) -> next -> title);
-      printf("tag : %s\n", (*m_log) -> next -> serial_number);
-    }
-    */
+
     printf("%d번재 루프 끝 -----------------\n\n", count);
 }
-
-
-
-
-
-
-
 }
 void m_log_print(movie *m_log){
   m_actor *a_list = m_log -> movie_actor;
@@ -174,6 +156,72 @@ void m_log_print(movie *m_log){
   while(a_list != NULL){
     printf("%s\n", a_list -> actor);
     a_list = a_list -> next;
+  }
+
+}
+void update_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *movie_director,char *year,char *run_time,char * whole_string)
+{
+
+  movie ** tmp;
+  tmp = m_log;
+
+  char * token = (char*)malloc(sizeof(char)*2);
+  char * string_cut;
+  struct m_actor * move;
+  struct m_actor * m_a_tmp;
+  struct m_actor * space;
+  *(token + 0) = ',';
+  *(token + 1) = '\n';
+
+  if (strcmp(((*tmp) -> serial_number), serial_number) == 0) // 첫번째일때
+  {
+    if(strcmp(title,"=") != 0)
+    {
+      (*(m_log)) ->title = title;
+    }
+    if(strcmp(genre,"=") != 0)
+    {
+    (*(m_log)) ->genre = genre;
+    }
+    if(strcmp(movie_director,"=") != 0)
+    {
+      (*(m_log)) ->movie_director -> director  = movie_director;
+    }
+    if(strcmp(year,"=") != 0)
+    {
+      (*(m_log)) ->year  = year;
+    }
+    if(strcmp(run_time,"=") != 0)
+    {
+      (*(m_log)) ->run_time  = run_time;
+    }
+    if(strcmp(whole_string,"=") != 0)
+    {
+      (*(m_log)) ->movie_actor = NULL;
+      (*(m_log)) ->movie_actor = (m_actor *)malloc(sizeof(m_actor));
+      (*(m_log)) ->movie_actor -> actor  = strtok(whole_string, token);
+      (*(m_log)) ->movie_actor -> link = NULL;//링크추가
+      (*(m_log)) ->movie_actor -> next = (m_actor *)malloc(sizeof( m_actor));
+
+      move = (*(m_log)) -> movie_actor -> next;
+      space = (*(m_log))-> movie_actor;
+      while ((string_cut = strtok(NULL, token))!=NULL)
+      {
+        move -> actor = string_cut;
+        move -> link = NULL;// 링크연결
+        move -> next =  (struct m_actor *)malloc(sizeof(struct m_actor));
+        move = move -> next;
+        move -> next = NULL;
+      }
+      while (space->next != NULL)
+       {
+          if (*(space->actor) == ' ')
+             space->actor = (space->actor) + 1;
+          space = space->next;
+       }
+    }
+
+    return;
   }
 
 }
@@ -349,7 +397,10 @@ void addm(void)
       else
       {
         flush();
+        fprintf(movie_log, "\n");
         fprintf(movie_log, "add:");
+        add_number++;
+        fprintf(movie_log, "%d:", add_number);
         //fprintf(movie_log, "%s", tmp.serial_number);
         printf("title > ");
         scanf("%[^\n]", title);
