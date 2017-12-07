@@ -1165,7 +1165,9 @@ void deletem(char * num)
   }
   else
   {
-    printf("%s", num);
+    flush();
+    fprintf(movie_log, "\n");
+    fprintf(movie_log, "delete:%s:=:=:=:=:=:=", num);
 
     //fprintf(movie_log,"delete");
   }
