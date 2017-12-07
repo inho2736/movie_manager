@@ -11,10 +11,10 @@ void deletem(char *);
 void quit(int);
 void flush(void);
 void start(void);
-void addm(void);
-void addd(void);
-void adda(void);
-void command(void);
+
+
+
+
 void changes(char *);
 typedef struct d_title{
   char * title;
@@ -62,6 +62,10 @@ typedef struct actor{
   struct actor * next;
 } actor;
 
+void command(movie *, actor *, director *);
+void addd(director *);
+void adda(actor *);
+void addm(movie *);
 void input_m_log(movie **, FILE *);
 void input_log(movie **, actor **, director **);
 void string_input(FILE *, char **);
@@ -93,10 +97,11 @@ int main(void)
   d_log = NULL;
   signal(SIGINT, (void*)quit);
   input_log(&m_log, &a_log, &d_log);
+  printf("메인에서 첫번째%s\n", m_log -> title);
   link_struct(m_log, d_log, a_log);
 
   start();
-  command();
+  command(m_log, a_log, d_log);
   return 0;
 }
 
@@ -718,7 +723,7 @@ void flush(void)
 {
   while(getchar()!='\n');
 }
-void command(void)
+void command(movie *m_log, actor *a_log, director *d_log)
 {
   char *order=(char *)malloc(100);
 	char *minopt=(char*)malloc(100);
@@ -739,13 +744,13 @@ void command(void)
 	}
 	if(strcmp(order,"add")==0){//add명령어를 받으면 m|d|a중 골라서 함수 호출
 		if(optmda=='m'){
-				addm();
+				addm(m_log);
 		}
 		else if(optmda=='d'){
-			addd();
+			addd(d_log);
 		}
 		else if(optmda=='a'){
-			adda();
+			adda(a_log);
 		}
 	}
 	else if(strcmp(order,"update")==0){//update명령어를 받으면 m|d|a중 골라서 함수호출
@@ -823,7 +828,7 @@ void command(void)
 	}
 
 }
-void addm(void)
+void addm(movie *m_log)
 {
     char * whole_string = (char*)malloc(sizeof(char) * 100);
     char * token = (char*)malloc(sizeof(char)*2);// actor 입력시 ,와 개행으로 문자열 나누기
@@ -838,13 +843,14 @@ void addm(void)
     char * year = (char*)malloc(sizeof(char)*10);
     char * run_time = (char*)malloc(sizeof(char)*10);
     int comma =0;
+    char *check;
     tmp.movie_actor = (struct m_actor *)malloc(sizeof(struct m_actor) * 1);
 
     *(token + 0) = ',';
     *(token + 1) = '\n';
 
     FILE * movie_log;
-    if ((movie_log = fopen("movie_log.txt", "a")) == NULL)
+    if ((movie_log = fopen("movie_log.txt", "a+")) == NULL)
     {
       printf("오류 : 파일을 열 수 없습니다. \n");
       }
@@ -876,8 +882,10 @@ void addm(void)
         flush();
         printf("actors > ");
         scanf("%[^\n]", whole_string);
+
         changes(whole_string);
         flush();
+
         tmp.movie_actor -> actor = strtok(whole_string, token);
         tmp.movie_actor -> link = NULL;
         tmp.movie_actor -> next = (struct m_actor *)malloc(sizeof(struct m_actor));
@@ -903,13 +911,23 @@ void addm(void)
           fprintf(movie_log, "%s", m_a_tmp->actor);
           m_a_tmp = m_a_tmp->next;
           comma++;
+
         }
-
+        fseek(movie_log, 0, SEEK_SET);
+         string_input(movie_log, &check);
+        for (int i = 0; i < add_m_number; string_input(movie_log, &check)){
+          if (strcmp(check, "add") == 0){
+            i++;
+          }
+          if (i == add_m_number)
+            break;
+        }
+        fseek(movie_log, -4, SEEK_CUR);
+        input_m_log(&m_log, movie_log);
     	fclose(movie_log);
-
       }
   }
-void addd(void)
+void addd(director *d_log)
 {
     char * whole_string = (char*)malloc(sizeof(char) * 100);// movie입력 전체를 한 문자열로 임시로 받음
     char * token = (char*)malloc(sizeof(char)*2);// movie 입력시 ,와 개행으로 문자열 나누기
@@ -922,20 +940,24 @@ void addd(void)
     char * s = (char*)malloc(sizeof(char)*100);
     char * birth = (char*)malloc(sizeof(char)*100);
     int comma =0;
+    char *check;
     tmp.director_title = (struct d_title *)malloc(sizeof(struct d_title) * 1);
 
     *(token + 0) = ',';
     *(token + 1) = '\n';
 
     FILE * director_log;
-    if ((director_log = fopen("director_log.txt", "a")) == NULL)
+    if ((director_log = fopen("director_log.txt", "a+")) == NULL)
     {
       printf("오류 : 파일을 열 수 없습니다. \n");
       }
       else
       {
+        flush();
+        fprintf(director_log, "\n");
         fprintf(director_log, "add:");
-        //fprintf(movie_log, "%s", tmp.serial_number);
+        add_d_number++;
+        fprintf(director_log, "%d:", add_d_number);
         printf("name > ");
         scanf("%[^\n]", d_name);
         changes(d_name);
@@ -980,11 +1002,23 @@ void addd(void)
           comma++;
         }
 
+        fseek(director_log, 0, SEEK_SET);
+         string_input(director_log, &check);
+        for (int i = 0; i < add_d_number; string_input(director_log, &check)){
+          if (strcmp(check, "add") == 0){
+            i++;
+          }
+          if (i == add_d_number)
+            break;
+        }
+        fseek(director_log, -4, SEEK_CUR);
+        input_d_log(&d_log, director_log);
+        printf("디렉터의 세번째 : %s\n", (d_log) -> next -> next -> d_name);
     	fclose(director_log);
 
       }
   }
-void adda(void)
+void adda(actor *a_log)
 {
   char * whole_string = (char*)malloc(sizeof(char) * 100);// movie입력 전체를 한 문자열로 임시로 받음
   char * token = (char*)malloc(sizeof(char)*2);// movie 입력시 ,와 개행으로 문자열 나누기
@@ -997,19 +1031,24 @@ void adda(void)
   char * s = (char*)malloc(sizeof(char)*100);
   char * birth = (char*)malloc(sizeof(char)*100);
   int comma =0;
+  char *check;
   tmp.actor_title = (struct a_title *)malloc(sizeof(struct a_title) * 1);
 
   *(token + 0) = ',';
   *(token + 1) = '\n';
 
   FILE * actor_log;
-  if ((actor_log = fopen("actor_log.txt", "a")) == NULL)
+  if ((actor_log = fopen("actor_log.txt", "a+")) == NULL)
   {
     printf("오류 : 파일을 열 수 없습니다. \n");
     }
     else
     {
+      flush();
+      fprintf(actor_log, "\n");
       fprintf(actor_log, "add:");
+      add_a_number++;
+      fprintf(actor_log, "%d:", add_a_number);
       //fprintf(movie_log, "%s", tmp.serial_number);
       printf("name > ");
       scanf("%[^\n]", a_name);
@@ -1055,6 +1094,17 @@ void adda(void)
         comma++;
       }
 
+      fseek(actor_log, 0, SEEK_SET);
+       string_input(actor_log, &check);
+      for (int i = 0; i < add_a_number; string_input(actor_log, &check)){
+        if (strcmp(check, "add") == 0){
+          i++;
+        }
+        if (i == add_a_number)
+          break;
+      }
+      fseek(actor_log, -4, SEEK_CUR);
+      input_a_log(&a_log, actor_log);
     fclose(actor_log);
 
     }
