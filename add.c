@@ -1,3 +1,33 @@
+int same_a_check(actor *a_log, char *a_name){
+  while(1){
+    if (strcmp(a_log -> a_name, a_name) == 0){
+      return 1;
+    }
+    if (a_log -> next == NULL)
+      break;
+    a_log = a_log -> next;
+  }
+  return 0;
+}
+void print_for_same(movie *m_log, m_actor *movie_actor, char *title){
+  while (1){
+    if (strcmp(title, m_log -> title) == 0){
+          break;
+   }
+    m_log = m_log -> next;
+    movie_actor = m_log -> movie_actor;
+  }
+  printf("%s:%s:", m_log -> serial_number, m_log -> title);
+  printf("%s:%s:", m_log -> genre, m_log -> movie_director -> director);
+  printf("%s:%s:", m_log -> year, m_log -> run_time);
+  while (1){
+    printf("%s, ", movie_actor -> actor);
+    if (movie_actor -> next -> next == NULL)
+      break;
+    movie_actor = movie_actor -> next;
+  }
+}
+
 void addm(movie *m_log, director *d_log, actor *a_log)
 {
     char * whole_string = (char*)malloc(sizeof(char) * 100);
