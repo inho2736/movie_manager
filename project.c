@@ -68,17 +68,16 @@ void input_m_log(movie **, FILE *);
 void input_log(movie **, actor **, director **);
 void string_input(FILE *, char **);
 void add_mlog(movie **, char*, char*, char*, char*, char*, char*, char*);
-void m_log_print(movie *);
 void delete_mlog(movie * , char *);
-void update_mlog(movie ** , char *,char *,char *,char *,char *,char *,char *);
+void update_mlog(movie * , char *,char *,char *,char *,char *,char *,char *);
 void input_d_log(director **, FILE *);
 void add_dlog(director **, char *, char *, char *, char *, char *);
 void delete_dlog(director *, char *);
 void input_a_log(actor **, FILE *);
 void add_alog(actor **, char *, char *, char *, char *, char *);
 void delete_alog(actor *, char *);
-void update_dlog(director **, char *,char *,char *,char *, char *);
-void update_alog(actor ** , char *, char *, char *,char *, char * );
+void update_dlog(director *, char *,char *,char *,char *, char *);
+void update_alog(actor * , char *, char *, char *,char *, char * );
 void link_struct(movie *, director *, actor *);
 void link_md(m_director *, director *);
 void link_ma(m_actor *, actor *);
@@ -112,9 +111,13 @@ void con_printa(int print_it, actor *, a_title *);
 int q_check(char * );
 void savem(movie *);
 void saved(director *);
+void savea(actor *);
 char* timefilem(void);
 char* timefiled(void);
+char * timefilea(void);
 void end(movie *, director *, actor *);
+void memory_to_listd(director *);
+void memory_to_lista(actor *);
 int main(void)
 {
   movie *m_log = (movie *)malloc(sizeof(movie));
@@ -126,13 +129,15 @@ int main(void)
   signal(SIGINT, (void*)quit);
   input_log(&m_log, &a_log, &d_log);
   link_struct(m_log, d_log, a_log);
+  memory_to_listm(m_log);
+  memory_to_listd(d_log);
+  memory_to_lista(a_log);
 
   start();
   while(1){
   printf("(movie) ");
   command(m_log, a_log, d_log);
   link_struct(m_log, d_log, a_log);//안되면 앞에 모든 구조체 널로 하는 함수 넣기
-  //memory_to_listm(m_log);
 }
   return 0;
 }
@@ -145,6 +150,9 @@ void input_log(movie **m_log, actor **a_log, director **d_log){
   input_m_log(m_log, m_file);
   input_d_log(d_log, d_file);
   input_a_log(a_log, a_file);
+  fclose(m_file);
+  fclose(a_file);
+  fclose(d_file);
 }
 
 void input_m_log(movie **m_log, FILE *m_file) {
@@ -182,7 +190,7 @@ void input_m_log(movie **m_log, FILE *m_file) {
       delete_mlog((*m_log), serial_number);
     }
     else if (strcmp(tag, "update") == 0){
-      update_mlog(m_log, serial_number, title, genre, movie_director, year, run_time, movie_actor);
+      update_mlog((*m_log), serial_number, title, genre, movie_director, year, run_time, movie_actor);
     }
     count++;
 
@@ -211,18 +219,15 @@ void input_d_log(director **d_log, FILE *d_file) {
     string_input(d_file, &birth);
     string_input(d_file, &director_title);
     if (strcmp(tag, "add") == 0){
-      printf("에드직전");
       add_dlog(d_log, serial_number, d_name, s, birth, director_title);
       add_d_number ++;
     }
 
     else if (strcmp(tag, "delete") == 0){
-      printf("딜리트 직전");
       delete_dlog((*d_log), serial_number);
     }
     else if (strcmp(tag, "update") == 0){
-      printf("업데이트 직전");
-      update_dlog(d_log, serial_number, d_name, s, birth, director_title);
+      update_dlog((*d_log), serial_number, d_name, s, birth, director_title);
     }
     count++;
 
@@ -257,7 +262,7 @@ void input_a_log(actor **a_log, FILE *a_file) {
     }
 
     else if (strcmp(tag, "update") == 0){
-      update_alog(a_log, serial_number, actor, s, birth, actor_title);
+      update_alog((*a_log), serial_number, actor, s, birth, actor_title);
     }
     count++;
 
@@ -375,25 +380,11 @@ void add_alog(actor ** a_log, char *serial_number, char *a_name, char *s, char *
    }
 
 }
-void m_log_print(movie *m_log){
-  m_actor *a_list = m_log -> movie_actor;
-  printf("%s\n", m_log -> serial_number);
-  printf("%s\n", m_log -> title);
-  printf("%s\n", m_log -> genre);
-  printf("%s\n", m_log -> movie_director -> director);
-  printf("%s\n", m_log -> year);
-  printf("%s\n", m_log -> run_time);
 
-  while(a_list != NULL){
-    printf("%s\n", a_list -> actor);
-    a_list = a_list -> next;
-  }
-
-}
-void update_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *movie_director,char *year,char *run_time,char * whole_string)
+void update_mlog(movie * m_log, char *serial_number,char *title,char *genre,char *movie_director,char *year,char *run_time,char * whole_string)
 {
 
-  movie ** tmp;
+  movie * tmp;
   tmp = m_log;
 
   char * token = (char*)malloc(sizeof(char)*2);
@@ -404,38 +395,38 @@ void update_mlog(movie ** m_log, char *serial_number,char *title,char *genre,cha
   *(token + 0) = ',';
   *(token + 1) = '\n';
 
-  if (strcmp(((*tmp) -> serial_number), serial_number) == 0) // 첫번째일때
+  if (strcmp(((tmp) -> serial_number), serial_number) == 0) // 첫번째일때
   {
     if(strcmp(title,"=") != 0)
     {
-      (*m_log) ->title = title;
+      (m_log) ->title = title;
     }
     if(strcmp(genre,"=") != 0)
     {
-      (*m_log) ->genre = genre;
+      (m_log) ->genre = genre;
     }
     if(strcmp(movie_director,"=") != 0)
     {
-      (*m_log) ->movie_director -> director  = movie_director;
+      (m_log) ->movie_director -> director  = movie_director;
     }
     if(strcmp(year,"=") != 0)
     {
-      (*m_log) ->year  = year;
+      (m_log) ->year  = year;
     }
     if(strcmp(run_time,"=") != 0)
     {
-      (*m_log) ->run_time  = run_time;
+      (m_log) ->run_time  = run_time;
     }
     if(strcmp(whole_string,"=") != 0)
     {
-      (*m_log) ->movie_actor = NULL;
-      (*m_log) ->movie_actor = (m_actor *)malloc(sizeof(m_actor));
-      (*m_log) ->movie_actor -> actor  = strtok(whole_string, token);
-      (*m_log) ->movie_actor -> link = NULL;//링크추가
-      (*m_log) ->movie_actor -> next = (m_actor *)malloc(sizeof( m_actor));
+      (m_log) ->movie_actor = NULL;
+      (m_log) ->movie_actor = (m_actor *)malloc(sizeof(m_actor));
+      (m_log) ->movie_actor -> actor  = strtok(whole_string, token);
+      (m_log) ->movie_actor -> link = NULL;//링크추가
+      (m_log) ->movie_actor -> next = (m_actor *)malloc(sizeof( m_actor));
 
-      move = (*m_log) -> movie_actor -> next;
-      space = (*m_log)-> movie_actor;
+      move = (m_log) -> movie_actor -> next;
+      space = (m_log)-> movie_actor;
       while ((string_cut = strtok(NULL, token))!=NULL)
       {
         move -> actor = string_cut;
@@ -456,38 +447,38 @@ void update_mlog(movie ** m_log, char *serial_number,char *title,char *genre,cha
   }
   while(1)
   {
-    if (strcmp(((*tmp) -> next -> serial_number), serial_number) == 0)
+    if (strcmp(((tmp) -> next -> serial_number), serial_number) == 0)
     {
       if(strcmp(title,"=") != 0)
       {
-        (*tmp) -> next ->title = title;
+        (tmp) -> next ->title = title;
       }
       if(strcmp(genre,"=") != 0)
       {
-        (*tmp) ->next ->genre = genre;
+        (tmp) ->next ->genre = genre;
       }
       if(strcmp(movie_director,"=") != 0)
       {
-        (*tmp) ->next ->movie_director -> director  = movie_director;
+        (tmp) ->next ->movie_director -> director  = movie_director;
       }
       if(strcmp(year,"=") != 0)
       {
-        (*tmp) ->next ->year  = year;
+        (tmp) ->next ->year  = year;
       }
       if(strcmp(run_time,"=") != 0)
       {
-        (*tmp) ->next ->run_time  = run_time;
+        (tmp) ->next ->run_time  = run_time;
       }
       if(strcmp(whole_string,"=") != 0)
       {
-        (*tmp) ->next ->movie_actor = NULL;
-        (*tmp) ->next ->movie_actor = (m_actor *)malloc(sizeof(m_actor));
-        (*tmp) ->next ->movie_actor -> actor  = strtok(whole_string, token);
-        (*tmp) ->next ->movie_actor -> link = NULL;//링크추가
-        (*tmp) ->next ->movie_actor -> next = (m_actor *)malloc(sizeof( m_actor));
+        (tmp) ->next ->movie_actor = NULL;
+        (tmp) ->next ->movie_actor = (m_actor *)malloc(sizeof(m_actor));
+        (tmp) ->next ->movie_actor -> actor  = strtok(whole_string, token);
+        (tmp) ->next ->movie_actor -> link = NULL;//링크추가
+        (tmp) ->next ->movie_actor -> next = (m_actor *)malloc(sizeof( m_actor));
 
-        move = (*tmp) -> next ->movie_actor -> next;
-        space = (*tmp)-> next ->movie_actor;
+        move = (tmp) -> next ->movie_actor -> next;
+        space = (tmp)-> next ->movie_actor;
         while ((string_cut = strtok(NULL, token))!=NULL)
         {
           move -> actor = string_cut;
@@ -506,15 +497,15 @@ void update_mlog(movie ** m_log, char *serial_number,char *title,char *genre,cha
 
       return;
      }
-    (*tmp) = (*tmp) -> next;
+    (tmp) = (tmp) -> next;
   }//while
 
 
 }//함수
-void update_dlog(director ** d_log, char *serial_number,char *d_name,char *s,char *birth, char * whole_string)
+void update_dlog(director * d_log, char *serial_number,char *d_name,char *s,char *birth, char * whole_string)
 {
 
-  director ** tmp;
+  director * tmp;
   tmp = d_log;
 
   char * token = (char*)malloc(sizeof(char)*2);
@@ -525,30 +516,30 @@ void update_dlog(director ** d_log, char *serial_number,char *d_name,char *s,cha
   *(token + 0) = ',';
   *(token + 1) = '\n';
 
-  if (strcmp(((*tmp) -> serial_number), serial_number) == 0) // 첫번째일때
+  if (strcmp(((tmp) -> serial_number), serial_number) == 0) // 첫번째일때
   {
     if(strcmp(d_name,"=") != 0)
     {
-      (*d_log) -> d_name = d_name;
+      (d_log) -> d_name = d_name;
     }
     if(strcmp(s,"=") != 0)
     {
-      (*d_log) -> s = s;
+      (d_log) -> s = s;
     }
     if(strcmp(birth,"=") != 0)
     {
-      (*d_log) -> birth  = birth;
+      (d_log) -> birth  = birth;
     }
     if(strcmp(whole_string,"=") != 0)
     {
-      (*d_log) ->director_title = NULL;
-      (*d_log) ->director_title = (d_title *)malloc(sizeof(d_title));
-      (*d_log) ->director_title -> title  = strtok(whole_string, token);
-      (*d_log) ->director_title -> link = NULL;//링크추가
-      (*d_log) ->director_title -> next = (d_title *)malloc(sizeof( d_title));
+      (d_log) ->director_title = NULL;
+      (d_log) ->director_title = (d_title *)malloc(sizeof(d_title));
+      (d_log) ->director_title -> title  = strtok(whole_string, token);
+      (d_log) ->director_title -> link = NULL;//링크추가
+      (d_log) ->director_title -> next = (d_title *)malloc(sizeof( d_title));
 
-      move = (*d_log) -> director_title -> next;
-      space = (*d_log)-> director_title;
+      move = (d_log) -> director_title -> next;
+      space = (d_log)-> director_title;
       while ((string_cut = strtok(NULL, token))!=NULL)
       {
         move -> title = string_cut;
@@ -569,30 +560,30 @@ void update_dlog(director ** d_log, char *serial_number,char *d_name,char *s,cha
   }
   while(1)
   {
-    if (strcmp(((*tmp) -> next -> serial_number), serial_number) == 0)
+    if (strcmp(((tmp) -> next -> serial_number), serial_number) == 0)
     {
       if(strcmp(d_name,"=") != 0)
       {
-        (*tmp) -> next ->d_name = d_name;
+        (tmp) -> next ->d_name = d_name;
       }
       if(strcmp(s,"=") != 0)
       {
-        (*tmp) ->next ->s = s;
+        (tmp) ->next ->s = s;
       }
       if(strcmp(birth,"=") != 0)
       {
-        (*tmp) ->next ->birth  = birth;
+        (tmp) ->next ->birth  = birth;
       }
       if(strcmp(whole_string,"=") != 0)
       {
-        (*tmp) ->next ->director_title = NULL;
-        (*tmp) ->next ->director_title = (d_title *)malloc(sizeof(d_title));
-        (*tmp) ->next ->director_title -> title  = strtok(whole_string, token);
-        (*tmp) ->next ->director_title -> link = NULL;//링크추가
-        (*tmp) ->next ->director_title -> next = (d_title *)malloc(sizeof( d_title));
+        (tmp) ->next ->director_title = NULL;
+        (tmp) ->next ->director_title = (d_title *)malloc(sizeof(d_title));
+        (tmp) ->next ->director_title -> title  = strtok(whole_string, token);
+        (tmp) ->next ->director_title -> link = NULL;//링크추가
+        (tmp) ->next ->director_title -> next = (d_title *)malloc(sizeof( d_title));
 
-        move = (*tmp) -> next ->director_title -> next;
-        space = (*tmp)-> next ->director_title;
+        move = (tmp) -> next ->director_title -> next;
+        space = (tmp)-> next ->director_title;
         while ((string_cut = strtok(NULL, token))!=NULL)
         {
           move -> title = string_cut;
@@ -611,15 +602,15 @@ void update_dlog(director ** d_log, char *serial_number,char *d_name,char *s,cha
 
       return;
      }
-    (*tmp) = (*tmp) -> next;
+    (tmp) = (tmp) -> next;
   }//while
 
 
 }//함수
-void update_alog(actor ** a_log, char *serial_number,char *a_name,char *s,char *birth, char * whole_string)
+void update_alog(actor * a_log, char *serial_number,char *a_name,char *s,char *birth, char * whole_string)
 {
 
-  actor ** tmp;
+  actor * tmp;
   tmp = a_log;
 
   char * token = (char*)malloc(sizeof(char)*2);
@@ -630,30 +621,30 @@ void update_alog(actor ** a_log, char *serial_number,char *a_name,char *s,char *
   *(token + 0) = ',';
   *(token + 1) = '\n';
 
-  if (strcmp(((*tmp) -> serial_number), serial_number) == 0) // 첫번째일때
+  if (strcmp(((tmp) -> serial_number), serial_number) == 0) // 첫번째일때
   {
     if(strcmp(a_name,"=") != 0)
     {
-      (*a_log) -> a_name = a_name;
+      (a_log) -> a_name = a_name;
     }
     if(strcmp(s,"=") != 0)
     {
-      (*a_log) -> s = s;
+      (a_log) -> s = s;
     }
     if(strcmp(birth,"=") != 0)
     {
-      (*a_log) -> birth  = birth;
+      (a_log) -> birth  = birth;
     }
     if(strcmp(whole_string,"=") != 0)
     {
-      (*a_log) ->actor_title = NULL;
-      (*a_log) ->actor_title= (a_title *)malloc(sizeof(a_title));
-      (*a_log) ->actor_title -> title  = strtok(whole_string, token);
-      (*a_log) ->actor_title -> link = NULL;//링크추가
-      (*a_log) ->actor_title -> next = (a_title *)malloc(sizeof( a_title));
+      (a_log) ->actor_title = NULL;
+      (a_log) ->actor_title= (a_title *)malloc(sizeof(a_title));
+      (a_log) ->actor_title -> title  = strtok(whole_string, token);
+      (a_log) ->actor_title -> link = NULL;//링크추가
+      (a_log) ->actor_title -> next = (a_title *)malloc(sizeof( a_title));
 
-      move = (*a_log) -> actor_title -> next;
-      space = (*a_log)-> actor_title;
+      move = (a_log) -> actor_title -> next;
+      space = (a_log)-> actor_title;
       while ((string_cut = strtok(NULL, token))!=NULL)
       {
         move -> title = string_cut;
@@ -674,30 +665,30 @@ void update_alog(actor ** a_log, char *serial_number,char *a_name,char *s,char *
   }
   while(1)
   {
-    if (strcmp(((*tmp) -> next -> serial_number), serial_number) == 0)
+    if (strcmp(((tmp) -> next -> serial_number), serial_number) == 0)
     {
       if(strcmp(a_name,"=") != 0)
       {
-        (*tmp) -> next ->a_name = a_name;
+        (tmp) -> next ->a_name = a_name;
       }
       if(strcmp(s,"=") != 0)
       {
-        (*tmp) ->next ->s = s;
+        (tmp) ->next ->s = s;
       }
       if(strcmp(birth,"=") != 0)
       {
-        (*tmp) ->next ->birth  = birth;
+        (tmp) ->next ->birth  = birth;
       }
       if(strcmp(whole_string,"=") != 0)
       {
-        (*tmp) ->next ->actor_title = NULL;
-        (*tmp) ->next ->actor_title = (a_title *)malloc(sizeof(a_title));
-        (*tmp) ->next ->actor_title -> title  = strtok(whole_string, token);
-        (*tmp) ->next ->actor_title -> link = NULL;//링크추가
-        (*tmp) ->next ->actor_title -> next = (a_title *)malloc(sizeof( a_title));
+        (tmp) ->next ->actor_title = NULL;
+        (tmp) ->next ->actor_title = (a_title *)malloc(sizeof(a_title));
+        (tmp) ->next ->actor_title -> title  = strtok(whole_string, token);
+        (tmp) ->next ->actor_title -> link = NULL;//링크추가
+        (tmp) ->next ->actor_title -> next = (a_title *)malloc(sizeof( a_title));
 
-        move = (*tmp) -> next ->actor_title -> next;
-        space = (*tmp)-> next ->actor_title;
+        move = (tmp) -> next ->actor_title -> next;
+        space = (tmp)-> next ->actor_title;
         while ((string_cut = strtok(NULL, token))!=NULL)
         {
           move -> title = string_cut;
@@ -716,7 +707,7 @@ void update_alog(actor ** a_log, char *serial_number,char *a_name,char *s,char *
 
       return;
      }
-    (*tmp) = (*tmp) -> next;
+    (tmp) = (tmp) -> next;
   }//while
 
 
@@ -847,7 +838,7 @@ void command(movie *m_log, actor *a_log, director *d_log)
 			saved(d_log);
 		}
 		else if(optmda=='a'){
-			printf("14");
+			savea(a_log);
 		}
 	}
 	else if(strcmp(order,"search")==0){
@@ -1538,8 +1529,6 @@ int _check(char * string, char * data)
 {
    int str_len = strlen(string);
    int data_len = strlen(data);
-   printf("str_len %d\n", str_len);
-   printf("data_len %d\n", data_len);
    int j = 1;
    int count = 0;
    for (int i = data_len - str_len + 1; i< data_len; i++)
@@ -2579,7 +2568,7 @@ void addm(movie *m_log, director *d_log, actor *a_log)
         }
         if (strcmp(answer, "Yes") == 0) {
         fseek(movie_log, f_location, SEEK_SET);
-        update_mlog(&m_log, serial_number,title,genre,director,year,run_time,whole_string);
+        update_mlog(m_log, serial_number,title,genre,director,year,run_time,whole_string);
         fclose(movie_log);
         return;
         }
@@ -2725,7 +2714,7 @@ void addd(director *d_log)
 
         if (strcmp(answer, "Yes") == 0) {
         fseek(director_log, f_location, SEEK_SET);
-        update_dlog(&d_log, serial_number, d_name,s,birth, whole_string);
+        update_dlog(d_log, serial_number, d_name,s,birth, whole_string);
         fclose(director_log);
         return;
         }
@@ -2870,7 +2859,7 @@ void adda(actor *a_log)
 
       if (strcmp(answer, "Yes") == 0) {
       fseek(actor_log, f_location, SEEK_SET);
-      update_alog(&a_log, serial_number, a_name,s,birth, whole_string);
+      update_alog(a_log, serial_number, a_name,s,birth, whole_string);
       fclose(actor_log);
       return;
       }
@@ -2962,7 +2951,6 @@ void quit(int signo)
     exit(0);
   else
   {
-
     return;
   }
 
@@ -2999,7 +2987,6 @@ void deletem(movie *m_log, char * num)
     fprintf(movie_log,"\ndelete:%s::::",num);
     fseek(movie_log, 0, SEEK_SET);
     delete_mlog(m_log, num);
-    printf("두번쩨ㅐ 무비 : %s\n", m_log -> next -> title);
   }
 }
 void deleted(director *d_log, char * num){
@@ -3033,7 +3020,6 @@ void deleted(director *d_log, char * num){
     fprintf(director_log,"\ndelete:%s::::",num);
     fseek(director_log, 0, SEEK_SET);
     delete_dlog(d_log, num);
-    printf("두번쩨ㅐ 디렉터 : %s\n", d_log -> d_name);
   }
 }
 void deletea(actor *a_log, char * num)
@@ -3068,7 +3054,6 @@ void deletea(actor *a_log, char * num)
     fprintf(actor_log,"\ndelete:%s::::",num);
     fseek(actor_log, 0, SEEK_SET);
     delete_alog(a_log, num);
-    printf("첫번쩨ㅐ 액터 : %s\n", a_log -> a_name);
   }
 }
 void add_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *movie_director,char *year,char *run_time,char * whole_string) // 인자로 시리얼넘버부터 액터까지 다 받음 char *형으로
@@ -3096,7 +3081,6 @@ void add_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *
         if((*tmp_m_log)== NULL)
         break;
         (tmp_m_log) = &((*tmp_m_log) -> next);
-        printf("(*tmp_m_log) =(*tmp_m_log) -> next걸림\n");
       }
       (*tmp_m_log)  = (movie*)malloc(sizeof(movie));
 
@@ -3131,7 +3115,6 @@ void add_mlog(movie ** m_log, char *serial_number,char *title,char *genre,char *
          space->actor = (space->actor) + 1;
       space = space->next;
    }
-   printf("%s\n", (*tmp_m_log) -> title);
 
 }
 void delete_dlog(director * d_log, char *serial_number)
@@ -3322,11 +3305,20 @@ void link_am(a_title *actor_title, movie *m_log){
 void memory_to_listm(movie * m_log)
 {
   FILE *movie_p;
-  movie_p = fopen("movie_list.txt", "w");
 
   movie * m_tmp = m_log;
   m_actor * m_a_tmp = m_log->movie_actor;
 
+  char * textfile = "./movie_list.txt";
+    int f_ok = F_OK;
+    char * aft_change;
+    aft_change = timefilem();
+    if (access(textfile, f_ok) == 0)
+    {
+      rename("movie_list.txt", aft_change);
+    }
+
+    movie_p = fopen("movie_list.txt", "w");
 
 
   while (1)
@@ -3357,6 +3349,102 @@ void memory_to_listm(movie * m_log)
     else
       fprintf(movie_p,"\n");
     m_tmp = m_tmp->next;
+  }
+    fclose(movie_p);
+}
+void memory_to_listd(director * d_log)
+{
+  FILE *movie_p;
+
+  director * d_tmp = d_log;
+  d_title * d_t_tmp = d_log->director_title;
+
+  char * textfile = "./director_list.txt";
+    int f_ok = F_OK;
+    char * aft_change;
+    aft_change = timefiled();
+    if (access(textfile, f_ok) == 0)
+    {
+      rename("director_list.txt", aft_change);
+    }
+
+    movie_p = fopen("director_list.txt", "w");
+
+
+  while (1)
+  {
+    //printf("%s:", m_tmp->serial_number);
+    fprintf(movie_p,"%s:", d_tmp->serial_number);
+    fprintf(movie_p,"%s:", d_tmp->d_name);
+    fprintf(movie_p,"%s:", d_tmp->s);
+    fprintf(movie_p,"%s:", d_tmp->birth);
+    d_t_tmp = d_tmp->director_title;
+    while(1)
+    {
+      fprintf(movie_p,"%s", d_t_tmp->title);
+
+      if ((d_t_tmp-> next -> next) == NULL)
+        break;
+      else
+        fprintf(movie_p,",");
+
+      d_t_tmp = d_t_tmp->next;
+    }
+    //printf("문제루프 넘어옴\n");
+
+    if ((d_tmp->next)== NULL)
+      break;
+    else
+      fprintf(movie_p,"\n");
+    d_tmp = d_tmp->next;
+  }
+    fclose(movie_p);
+}
+void memory_to_lista(actor * a_log)
+{
+  FILE *movie_p;
+
+  actor * a_tmp = a_log;
+  a_title * a_t_tmp = a_log->actor_title;
+
+  char * textfile = "./actor_list.txt";
+    int f_ok = F_OK;
+    char * aft_change;
+    aft_change = timefilea();
+    if (access(textfile, f_ok) == 0)
+    {
+      rename("actor_list.txt", aft_change);
+    }
+
+    movie_p = fopen("actor_list.txt", "w");
+
+
+  while (1)
+  {
+    //printf("%s:", m_tmp->serial_number);
+    fprintf(movie_p,"%s:", a_tmp->serial_number);
+    fprintf(movie_p,"%s:", a_tmp->a_name);
+    fprintf(movie_p,"%s:", a_tmp->s);
+    fprintf(movie_p,"%s:", a_tmp->birth);
+    a_t_tmp = a_tmp->actor_title;
+    while(1)
+    {
+      fprintf(movie_p,"%s", a_t_tmp->title);
+
+      if ((a_t_tmp-> next -> next) == NULL)
+        break;
+      else
+        fprintf(movie_p,",");
+
+      a_t_tmp = a_t_tmp->next;
+    }
+    //printf("문제루프 넘어옴\n");
+
+    if ((a_tmp->next)== NULL)
+      break;
+    else
+      fprintf(movie_p,"\n");
+    a_tmp = a_tmp->next;
   }
     fclose(movie_p);
 }
@@ -3511,7 +3599,7 @@ void updatem(movie * m_log, char * string)
 
       }
       fseek(movie_p, 0 ,SEEK_SET);
-      update_mlog(&m_log, m_tmp -> serial_number,title,genre,director,year,run_time,all_string);
+      update_mlog(m_log, m_tmp -> serial_number,title,genre,director,year,run_time,all_string);
       fclose(movie_p);
       return;
 
@@ -3770,7 +3858,7 @@ void updatem(movie * m_log, char * string)
       }
     }
     fseek(movie_p, 0 ,SEEK_SET);
-    update_mlog(&m_log, m_tmp -> serial_number,title,genre,director,year,run_time,all_string);
+    update_mlog(m_log, m_tmp -> serial_number,title,genre,director,year,run_time,all_string);
     fclose(movie_p);
 
   }
@@ -3921,7 +4009,7 @@ void updated(director * d_log, char * string)
 
       }
       fseek(movie_p, 0 ,SEEK_SET);
-      update_dlog(&d_log, d_tmp -> serial_number,d_name,sex,birth,all_string);
+      update_dlog(d_log, d_tmp -> serial_number,d_name,sex,birth,all_string);
       fclose(movie_p);
       return;
 
@@ -4126,7 +4214,7 @@ void updated(director * d_log, char * string)
       }
     }
     fseek(movie_p, 0 ,SEEK_SET);
-    update_dlog(&d_log, d_tmp -> serial_number,d_name,sex,birth,all_string);
+    update_dlog(d_log, d_tmp -> serial_number,d_name,sex,birth,all_string);
     fclose(movie_p);
   }
 }
@@ -4275,7 +4363,7 @@ void updatea(actor * a_log, char * string)
 
       }
       fseek(movie_p, 0 ,SEEK_SET);
-      update_alog(&a_log, a_tmp -> serial_number,a_name,sex,birth,all_string);
+      update_alog(a_log, a_tmp -> serial_number,a_name,sex,birth,all_string);
       fclose(movie_p);
       return;
 
@@ -4480,7 +4568,7 @@ void updatea(actor * a_log, char * string)
       }
     }
     fseek(movie_p, 0 ,SEEK_SET);
-    update_alog(&a_log, a_tmp -> serial_number,a_name,sex,birth,all_string);
+    update_alog(a_log, a_tmp -> serial_number,a_name,sex,birth,all_string);
     fclose(movie_p);
   }
 }
@@ -4504,7 +4592,6 @@ void savem(movie * m_log)
     {
       space = getchar();
       scanf("%s", filename);
-      printf("파일이름만");
 
       FILE * movie_p;
       movie_p = fopen("a.txt", "w");
@@ -4640,7 +4727,6 @@ void savem(movie * m_log)
       {
         movie_p = fopen("a.txt", "w");
         scanf("%s %s", dump, filename);
-        printf("둘다");
 
         while (*(s_option+i) != '\0')
         {
@@ -4727,7 +4813,6 @@ void savem(movie * m_log)
   }
   else
   {
-    printf("짧");
     FILE * movie_p;
     char * textfile = "./movie_list.txt";
     int f_ok = F_OK;
@@ -4767,7 +4852,6 @@ void savem(movie * m_log)
       m_tmp = m_tmp->next;
     }
 
-    printf("끝");
     fclose(movie_p);
     rename("movie_list.txt", "movie_list.txt");
   }// 짧
@@ -4804,7 +4888,6 @@ void saved(director * d_log)
     {
       space = getchar();
       scanf("%s", filename);
-      printf("파일이름만");
 
       FILE * movie_p;
       movie_p = fopen("a.txt", "w");
@@ -4924,28 +5007,31 @@ void saved(director * d_log)
       {
         movie_p = fopen("a.txt", "w");
         scanf("%s %s", dump, filename);
-        printf("둘다");
 
+        printf("%s\n", s_option);
         while (*(s_option+i) != '\0')
         {
           switch(*(s_option+i)){
               case 'n':
+                printf("n\n");
                 n=1;
                 i++;
                 break;
               case 's':
+              printf("s\n");
                 s=1;
                 i++;
                 break;
               case 'b':
+              printf("b\n");
                 b=1;
                 i++;
                 break;
               case 'm':
+              printf("m\n");
                 m=1;
                 i++;
                 break;
-
           }
         }
         while (1)
@@ -4968,7 +5054,6 @@ void saved(director * d_log)
             fprintf(movie_p, "movie : ");
             while(1)
             {
-
               if (comma != 0)
                 fprintf(movie_p, ", ");
               fprintf(movie_p, "%s", d_t_tmp -> title);
@@ -4996,7 +5081,6 @@ void saved(director * d_log)
   }
   else
   {
-    printf("짧");
     FILE * movie_p;
     char * textfile = "./director_list.txt";
     int f_ok = F_OK;
@@ -5046,5 +5130,269 @@ char * timefiled(void)
   tp = time(NULL);
   t = localtime(&tp);
   sprintf(aft_string,"director_list.%d%02d%02d%02d%02d", t -> tm_year + 1900, t -> tm_mon +1, t -> tm_mday, t -> tm_hour, t -> tm_min);
+  return aft_string;
+}
+void savea(actor * a_log)
+{
+  char space;
+  char *s_option = (char *)calloc(5, sizeof(char));
+  char *filename = (char *)calloc(30, sizeof(char));
+  char *dump = (char *)calloc(5, sizeof(char));
+  int n=0, s=0, b=0, m=0;
+  int i =1;
+  int comma = 0;
+  actor * a_tmp = a_log;
+  a_title * a_t_tmp = a_log -> actor_title;
+
+  space = getchar();
+  if (space == ' ')
+  {
+    scanf("%s", s_option);
+    if (strcmp(s_option, "-f") == 0)
+    {
+      space = getchar();
+      scanf("%s", filename);
+
+      FILE * movie_p;
+      movie_p = fopen("a.txt", "w");
+
+      while (1)
+      {
+        fprintf(movie_p,"%s:", a_tmp->serial_number);
+        fprintf(movie_p,"%s:", a_tmp->a_name);
+        fprintf(movie_p,"%s:", a_tmp->s);
+        fprintf(movie_p,"%s:", a_tmp->birth);
+
+        a_t_tmp = a_tmp->actor_title;
+        while(1)
+        {
+          fprintf(movie_p,"%s", a_t_tmp->title);
+
+          if ((a_t_tmp-> next -> next) == NULL)
+            break;
+          else
+            fprintf(movie_p,",");
+
+          a_t_tmp = a_t_tmp->next;
+        }
+
+        if ((a_tmp->next)== NULL)
+          break;
+        else
+          fprintf(movie_p,"\n");
+        a_tmp = a_tmp->next;
+      }
+      fclose(movie_p);
+      rename("a.txt", filename);
+
+    }
+    else
+    {
+      space = getchar();
+      FILE * movie_p;
+
+      if (space == '\n')
+      {
+        char * textfile = "./actor_list.txt";
+        int f_ok = F_OK;
+        char * aft_change;
+        aft_change = timefilea();
+        if (access(textfile, f_ok) == 0)
+        {
+          rename("actor_list.txt", aft_change);
+
+        }
+        movie_p = fopen("actor_list.txt", "w");
+
+
+          while (*(s_option+i) != '\0')
+          {
+            switch(*(s_option+i)){
+                case 'n':
+                  n=1;
+                  i++;
+                  break;
+                case 's':
+                  s=1;
+                  i++;
+                  break;
+                case 'b':
+                  b=1;
+                  i++;
+                  break;
+                case 'm':
+                  m=1;
+                  i++;
+                  break;
+
+            }
+          }
+          while (1)
+          {
+            if (n ==1)
+            {
+              fprintf(movie_p,"name : %s\n", a_tmp -> a_name);
+            }
+            if (s ==1)
+            {
+              fprintf(movie_p,"sex : %s\n", a_tmp -> s);
+            }
+            if (b ==1)
+            {
+              fprintf(movie_p,"birth : %s\n", a_tmp -> birth);
+            }
+
+            if (m ==1)
+            {
+              fprintf(movie_p, "movie : ");
+              a_t_tmp = a_tmp -> actor_title;
+              while(1)
+              {
+
+                if (comma != 0)
+                  fprintf(movie_p, ", ");
+                fprintf(movie_p, "%s", a_t_tmp -> title);
+                comma++;
+                if ((a_t_tmp -> next -> next) == NULL)
+                  break;
+                a_t_tmp = a_t_tmp -> next;
+              }
+              comma = 0;
+              fprintf(movie_p,"\n");
+            }
+            if (a_tmp -> next == NULL)
+              break;
+            a_tmp = a_tmp -> next;
+
+          }
+          fclose(movie_p);
+      }
+      else
+      {
+        movie_p = fopen("a.txt", "w");
+        scanf("%s %s", dump, filename);
+
+        while (*(s_option+i) != '\0')
+        {
+          switch(*(s_option+i)){
+              case 'n':
+                n=1;
+                i++;
+                break;
+              case 's':
+                s=1;
+                i++;
+                break;
+              case 'b':
+                b=1;
+                i++;
+                break;
+              case 'm':
+                m=1;
+                i++;
+                break;
+
+          }
+        }
+        while (1)
+        {
+          if (n ==1)
+          {
+            fprintf(movie_p,"name : %s\n", a_tmp -> a_name);
+          }
+          if (s ==1)
+          {
+            fprintf(movie_p,"sex : %s\n", a_tmp -> s);
+          }
+          if (b ==1)
+          {
+            fprintf(movie_p,"birth : %s\n", a_tmp -> birth);
+          }
+
+          if (m ==1)
+          {
+            fprintf(movie_p, "movie : ");
+            while(1)
+            {
+
+              if (comma != 0)
+                fprintf(movie_p, ", ");
+              fprintf(movie_p, "%s", a_t_tmp -> title);
+              comma++;
+              if ((a_t_tmp -> next -> next) == NULL)
+                break;
+              a_t_tmp = a_t_tmp -> next;
+            }
+            fprintf(movie_p,"\n");
+            comma = 0;
+          }
+          if (a_tmp -> next == NULL)
+            break;
+          a_tmp = a_tmp -> next;
+          a_t_tmp = a_tmp -> actor_title;
+
+        }
+        fclose(movie_p);
+        rename("a.txt", filename);
+
+
+
+      }
+    }
+  }
+  else
+  {
+    FILE * movie_p;
+    char * textfile = "./actor_list.txt";
+    int f_ok = F_OK;
+    char * aft_change;
+    aft_change = timefilea();
+    if (access(textfile, f_ok) == 0)
+    {
+      rename("actor_list.txt", aft_change);
+
+    }
+    movie_p = fopen("actor_list.txt", "w");
+    while (1)
+    {
+      fprintf(movie_p,"%s:", a_tmp->serial_number);
+      fprintf(movie_p,"%s:", a_tmp->a_name);
+      fprintf(movie_p,"%s:", a_tmp->s);
+      fprintf(movie_p,"%s:", a_tmp->birth);
+
+      a_t_tmp = a_tmp->actor_title;
+      while(1)
+      {
+        fprintf(movie_p,"%s", a_t_tmp->title);
+
+        if ((a_t_tmp-> next -> next) == NULL)
+          break;
+        else
+          fprintf(movie_p,",");
+
+        a_t_tmp = a_t_tmp->next;
+      }
+
+      if ((a_tmp->next)== NULL)
+        break;
+      else
+        fprintf(movie_p,"\n");
+      a_tmp = a_tmp->next;
+    }
+
+    fclose(movie_p);
+    rename("movie_list.txt", "movie_list.txt");
+
+  }// 짧
+}
+char * timefilea(void)
+{
+  char * aft_string;
+  aft_string = (char *)malloc(sizeof(char)*50);
+  struct tm * t;
+  time_t tp;
+  tp = time(NULL);
+  t = localtime(&tp);
+  sprintf(aft_string,"actor_list.%d%02d%02d%02d%02d", t -> tm_year + 1900, t -> tm_mon +1, t -> tm_mday, t -> tm_hour, t -> tm_min);
   return aft_string;
 }
