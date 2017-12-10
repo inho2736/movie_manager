@@ -115,12 +115,12 @@ void savea(actor *);
 char* timefilem(void);
 char* timefiled(void);
 char * timefilea(void);
-void end(movie *, director *, actor *);
 void memory_to_listd(director *);
 void memory_to_lista(actor *);
+void end(movie *, actor *, director *);
 int main(void)
 {
-  movie *m_log = (movie *)malloc(sizeof(movie));
+  movie *m_log = (movie *)malloc(sizeof(movie));  //movie, actor, director에 해당하는 구조체 포인터 생성
   m_log = NULL;
   actor *a_log = (actor *)malloc(sizeof(actor));
   a_log = NULL;
@@ -137,7 +137,7 @@ int main(void)
   while(1){
   printf("(movie) ");
   command(m_log, a_log, d_log);
-  link_struct(m_log, d_log, a_log);//안되면 앞에 모든 구조체 널로 하는 함수 넣기
+  link_struct(m_log, d_log, a_log);
 }
   return 0;
 }
@@ -749,6 +749,12 @@ void flush(void)
 {
   while(getchar()!='\n');
 }
+void end(movie *m_log, actor *a_log, director *d_log){
+  memory_to_listm(m_log);
+  memory_to_lista(a_log);
+  memory_to_listd(d_log);
+  exit(0);
+}
 void command(movie *m_log, actor *a_log, director *d_log)
 {
   char *order=(char *)malloc(100);
@@ -765,6 +771,9 @@ void command(movie *m_log, actor *a_log, director *d_log)
 	if((strcmp(order,"search")!=0)&&(strcmp(order,"end")!=0)) {//search와 order를 제외한 모든 명령어는 m|d|a하나를 받는 부분
 		scanf("%c",&optmda);
 	}
+  else if ((strcmp(order,"search")!=0) && (space = '\n')) {
+    end(m_log, a_log, d_log);
+  }
 
 	if(strcmp(order,"add")==0){//add명령어를 받으면 m|d|a중 골라서 함수 호출
 		if(optmda=='m'){
@@ -844,6 +853,7 @@ void command(movie *m_log, actor *a_log, director *d_log)
 	else if(strcmp(order,"search")==0){
 		search(m_log, d_log, a_log);
 	}
+
 
 }
 void con_printm(int print_it, movie *m_tmp, m_actor *movie_actor){
